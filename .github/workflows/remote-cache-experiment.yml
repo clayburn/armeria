@@ -1,0 +1,45 @@
+name: Remote cache experiment
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  remote-cache-experiment:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cache: ['transforms', 'kotlin-dsl', 'groovy-dsl']
+        buildCache: ['build-cache', 'no-build-cache']
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - uses: gradle/actions/setup-gradle@v3
+      with:
+        cache-read-only: false
+    - name: Run remote cache experiment
+      run: |
+        cache='${{ matrix.cache }}'
+        buildCache='${{ matrix.buildCache }}'
+
+        echo "Test caches/*/$cache removal with --$buildCache"
+
+        echo "Running build once to fully populate Gradle User Home"
+        ./gradlew -Dscan.tag.remote-cache-experiment-init --no-daemon --no-configuration-cache -Ddevelocity.deprecation.muteWarnings=true -Dscan.uploadInBackground=false help
+        killall -9 java
+
+        echo "Removing $cache from $homeDir/caches"
+        rm -rf ~/.gradle/caches/*/$cache
+        rm -rf ~/.gradle/caches/$cache-* # Also remove the transforms for Gradle 8.7
+
+        # Always remove the local build cache, since we are testing connection with remote build cache
+        rm -rf ~/.gradle/caches/build-cache-1
+
+        echo "Running build again with --${buildCache}"
+        ./gradlew --$buildCache -Dscan.tag.remote-cache-experiment-$cache-$buildCache --no-configuration-cache -Ddevelocity.deprecation.muteWarnings=true -Dscan.uploadInBackground=false help
+      env:
+        DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
