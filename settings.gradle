@@ -16,43 +16,11 @@ import com.gradle.scan.plugin.PublishedBuildScan
 def isCi = System.getenv("CI") != null
 
 gradleEnterprise {
-    server = "https://ge.armeria.dev"
+    server = "https://ge.solutions-team.gradle.com"
     buildScan {
         publishIfAuthenticated()
         publishAlways()
         uploadInBackground = !isCi
-        if (isCi) {
-            buildScanPublished { PublishedBuildScan scan ->
-                def scanUrl = new File("build/build-scan-url.txt")
-                if(!scanUrl.getParentFile().exists()) {
-                    scanUrl.getParentFile().mkdirs()
-                }
-                scanUrl.newWriter().withWriter { w -> w << "${scan.buildScanUri}" }
-            }
-
-            // Add links to GitHub Actions and PR
-            def githubUrl = "${System.getenv("GITHUB_SERVER_URL")}/${System.getenv("GITHUB_REPOSITORY")}"
-            def prNumber = System.getenv("PR_NUMBER")
-            if (prNumber != null) {
-                link "GitHub PR", "${githubUrl}/pull/${prNumber}"
-                tag "PR"
-                def sha = System.getenv("COMMIT_SHA")
-                if (sha != null) {
-                    link "GitHub commit", "${githubUrl}/pull/${prNumber}/commits/${sha}"
-                }
-
-                def runId = System.getenv("RUN_ID")
-                def jobId = System.getenv("JOB_ID")
-                if (runId != null && jobId != null) {
-                    link "GitHub Actions job", "${githubUrl}/actions/runs/${runId}/job/${jobId}?pr=${prNumber}"
-                }
-            }
-
-            def jobName = System.getenv("JOB_NAME")
-            if (jobName != null) {
-                tag jobName
-            }
-        }
 
         capture {
             taskInputFiles = true
@@ -65,6 +33,7 @@ buildCache {
         enabled = true
     }
     remote(gradleEnterprise.buildCache) {
+        server = "https://ge.armeria.dev"
         enabled = true
         // also check access key to avoid warning logs
         def accessKey = System.getenv("GRADLE_ENTERPRISE_ACCESS_KEY")
