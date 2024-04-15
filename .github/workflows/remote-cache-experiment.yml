@@ -42,4 +42,5 @@ jobs:
         echo "Running build again with --${buildCache}"
         ./gradlew --$buildCache -Dscan.tag.remote-cache-experiment-$cache-$buildCache --no-configuration-cache -Ddevelocity.deprecation.muteWarnings=true -Dscan.uploadInBackground=false help
       env:
-        DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+        DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+        GRADLE_ENTERPRISE_ACCESS_KEY:  ${{ secrets.DEVELOCITY_ACCESS_KEY }}
